@@ -32,7 +32,7 @@ class AppUserTest {
             AppUser user = new AppUser(1L, "john_doe", "secret123", "John Doe");
 
             assertEquals(1L, user.getId());
-            assertEquals("john_doe", user.getUsername());
+            assertEquals("john_dow", user.getUsername());
             assertEquals("secret123", user.getPassword());
             assertEquals("John Doe", user.getDisplayName());
         }
