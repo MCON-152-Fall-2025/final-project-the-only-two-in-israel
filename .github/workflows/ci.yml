@@ -34,3 +34,4 @@ jobs:
 
       - name: Build with Maven
         run: mvn package
+        working-directory: MCON-152-Fall-2025/final-project-the-only-two-in-israel/develop/recipeshare
