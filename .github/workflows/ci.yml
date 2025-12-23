@@ -20,4 +20,6 @@ jobs:
           java-version: '21'
 
       - name: Run tests
-        run: mvn -ntp -B test
+        run: |
+          cd recipeshare
+          mvn -ntp -B test
