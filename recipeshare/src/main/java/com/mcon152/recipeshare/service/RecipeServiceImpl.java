@@ -2,7 +2,9 @@ package com.mcon152.recipeshare.service;
 
 import com.mcon152.recipeshare.domain.Recipe;
 import com.mcon152.recipeshare.domain.Tag;
+import com.mcon152.recipeshare.event.RecipeCreatedEvent;
 import com.mcon152.recipeshare.repository.RecipeRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,15 +15,27 @@ import java.util.stream.Collectors;
 public class RecipeServiceImpl implements RecipeService {
 
     private final RecipeRepository repo;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public RecipeServiceImpl(RecipeRepository repo) {
+    public RecipeServiceImpl(RecipeRepository repo,
+                             ApplicationEventPublisher eventPublisher) {
         this.repo = repo;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     public Recipe addRecipe(Recipe recipe) {
         recipe.setId(null); // ensure new entity
-        return repo.save(recipe);
+        Recipe saved = repo.save(recipe);
+
+        eventPublisher.publishEvent(
+                new RecipeCreatedEvent(
+                        saved.getId(),
+                        saved.getAuthor().getId()
+                )
+        );
+
+        return saved;
     }
 
     @Override
