@@ -6,6 +6,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "app_users")
@@ -86,5 +89,12 @@ public class AppUser extends BaseEntity {
                 ", createdAt=" + getCreatedAt() +
                 ", updatedAt=" + getUpdatedAt() +
                 '}';
+    }
+
+    @OneToMany(mappedBy = "followedUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AppUserFollower> followers = new ArrayList<>();
+
+    public List<AppUserFollower> getFollowers() {
+        return followers;
     }
 }
