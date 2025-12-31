@@ -1,3 +1,5 @@
+package com.mcon152.recipeshare.event;
+
 public class RecipeCreatedEvent {
 
     private final Long recipeId;
