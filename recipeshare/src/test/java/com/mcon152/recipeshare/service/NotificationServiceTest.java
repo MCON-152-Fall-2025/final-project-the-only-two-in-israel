@@ -46,7 +46,7 @@ class NotificationServiceTest {
     }
 
     @Test
-    void whenRecipeCreated_followersReceiveNotifications() {
+    void whenRecipeCreated_singleFollowerReceivesNotification() {
         // Mock repository behavior
         when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
 
@@ -76,21 +76,19 @@ class NotificationServiceTest {
         // Mock repository behavior
         when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
 
-        AppUserFollower followerLink1 = new AppUserFollower(follower1, author);
-        AppUserFollower followerLink2 = new AppUserFollower(follower2, author);
-        when(followerRepository.findByFollowedUser(author))
-                .thenReturn(List.of(followerLink1, followerLink2));
+        AppUserFollower link1 = new AppUserFollower(follower1, author);
+        AppUserFollower link2 = new AppUserFollower(follower2, author);
+        when(followerRepository.findByFollowedUser(author)).thenReturn(List.of(link1, link2));
 
         // Trigger the event
         RecipeCreatedEvent event = new RecipeCreatedEvent(11L, author.getId());
         notificationService.handleRecipeCreatedEvent(event);
 
-        // Capture notifications
+        // Capture all notifications
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationRepository, times(2)).save(captor.capture());
 
         List<Notification> savedNotifications = captor.getAllValues();
-
         assertEquals(2, savedNotifications.size());
         assertEquals(follower1, savedNotifications.get(0).getUser());
         assertEquals("New recipe published by author", savedNotifications.get(0).getMessage());
@@ -109,6 +107,22 @@ class NotificationServiceTest {
         notificationService.handleRecipeCreatedEvent(event);
 
         // No notifications should be saved
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void whenRecipeCreated_nonFollowersDoNotReceiveNotifications() {
+        // Mock repository behavior
+        when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
+
+        // No followers follow the author
+        when(followerRepository.findByFollowedUser(author)).thenReturn(List.of());
+
+        // Trigger the event
+        RecipeCreatedEvent event = new RecipeCreatedEvent(13L, author.getId());
+        notificationService.handleRecipeCreatedEvent(event);
+
+        // No notification should be saved
         verify(notificationRepository, never()).save(any());
     }
 }
