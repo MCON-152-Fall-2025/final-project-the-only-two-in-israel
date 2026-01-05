@@ -2,9 +2,9 @@ package com.mcon152.recipeshare.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -22,6 +22,13 @@ public class AppUser extends BaseEntity {
     @Column(length = 100)
     private String displayName;
 
+    // Relationships
+    @OneToMany(mappedBy = "followedUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AppUserFollower> followers = new ArrayList<>();
+
+    @OneToMany(mappedBy = "follower", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AppUserFollower> following = new ArrayList<>();
+
     // Constructors
     public AppUser() {}
 
@@ -38,7 +45,7 @@ public class AppUser extends BaseEntity {
         this.displayName = displayName;
     }
 
-    // Getters and Setters
+    // Getters and setters
     public String getUsername() {
         return username;
     }
@@ -63,6 +70,32 @@ public class AppUser extends BaseEntity {
         this.displayName = displayName;
     }
 
+    public List<AppUserFollower> getFollowers() {
+        return followers;
+    }
+
+    public List<AppUserFollower> getFollowing() {
+        return following;
+    }
+
+    // Helper methods for follow/unfollow
+    public void follow(AppUser toFollow) {
+        AppUserFollower link = new AppUserFollower(this, toFollow);
+        following.add(link);
+        toFollow.getFollowers().add(link);
+    }
+
+    public void unfollow(AppUser toUnfollow) {
+        following.removeIf(link -> {
+            if (link.getFollowedUser().equals(toUnfollow)) {
+                toUnfollow.getFollowers().remove(link);
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // equals & hashCode based on username
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -77,6 +110,7 @@ public class AppUser extends BaseEntity {
         return Objects.hash(super.hashCode(), username);
     }
 
+    // toString for debugging
     @Override
     public String toString() {
         return "AppUser{" +
