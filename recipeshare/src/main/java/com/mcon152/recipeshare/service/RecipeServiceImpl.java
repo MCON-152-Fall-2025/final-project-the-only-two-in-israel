@@ -28,12 +28,15 @@ public class RecipeServiceImpl implements RecipeService {
         recipe.setId(null); // ensure new entity
         Recipe saved = repo.save(recipe);
 
-        eventPublisher.publishEvent(
-                new RecipeCreatedEvent(
-                        saved.getId(),
-                        saved.getAuthor().getId()
-                )
-        );
+        // ✅ SAFE event publishing (Observer pattern)
+        if (saved.getAuthor() != null && saved.getAuthor().getId() != null) {
+            eventPublisher.publishEvent(
+                    new RecipeCreatedEvent(
+                            saved.getId(),
+                            saved.getAuthor().getId()
+                    )
+            );
+        }
 
         return saved;
     }
@@ -60,19 +63,16 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     public Optional<Recipe> updateRecipe(long id, Recipe updatedRecipe) {
         return repo.findById(id).map(existing -> {
-            // Preserve entity type (do not replace the DB row with a different subtype)
             existing.setTitle(updatedRecipe.getTitle());
             existing.setDescription(updatedRecipe.getDescription());
             existing.setIngredients(updatedRecipe.getIngredients());
             existing.setInstructions(updatedRecipe.getInstructions());
             existing.setServings(updatedRecipe.getServings());
 
-            // Update author if provided
             if (updatedRecipe.getAuthor() != null) {
                 existing.setAuthor(updatedRecipe.getAuthor());
             }
 
-            // Update tags if provided (replace all tags)
             if (updatedRecipe.getTags() != null) {
                 existing.clearTags();
                 updatedRecipe.getTags().forEach(existing::addTag);
@@ -91,12 +91,10 @@ public class RecipeServiceImpl implements RecipeService {
             if (partialRecipe.getInstructions() != null) existing.setInstructions(partialRecipe.getInstructions());
             if (partialRecipe.getServings() != null) existing.setServings(partialRecipe.getServings());
 
-            // Patch author if provided
             if (partialRecipe.getAuthor() != null) {
                 existing.setAuthor(partialRecipe.getAuthor());
             }
 
-            // Patch tags if provided (replace all tags)
             if (partialRecipe.getTags() != null && !partialRecipe.getTags().isEmpty()) {
                 existing.clearTags();
                 partialRecipe.getTags().forEach(existing::addTag);
@@ -105,8 +103,6 @@ public class RecipeServiceImpl implements RecipeService {
             return repo.save(existing);
         });
     }
-
-    // Tag-related operations
 
     @Override
     public Optional<Recipe> addTagToRecipe(long recipeId, Tag tag) {
