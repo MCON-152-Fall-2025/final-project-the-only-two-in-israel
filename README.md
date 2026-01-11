@@ -133,3 +133,6 @@ For questions or feedback, please open an issue on GitHub.
 
 - [Spring Boot Documentation](https://spring.io/projects/spring-boot)
 - [Apache Maven Documentation](https://maven.apache.org/guides/index.html)
+
+## Rena's first edits
+I am now editing the README file inorder to practice adding and merging branches
