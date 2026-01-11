@@ -2,7 +2,9 @@ package com.mcon152.recipeshare.service;
 
 import com.mcon152.recipeshare.domain.Recipe;
 import com.mcon152.recipeshare.domain.Tag;
+import com.mcon152.recipeshare.event.RecipeCreatedEvent;
 import com.mcon152.recipeshare.repository.RecipeRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,15 +15,30 @@ import java.util.stream.Collectors;
 public class RecipeServiceImpl implements RecipeService {
 
     private final RecipeRepository repo;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public RecipeServiceImpl(RecipeRepository repo) {
+    public RecipeServiceImpl(RecipeRepository repo,
+                             ApplicationEventPublisher eventPublisher) {
         this.repo = repo;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     public Recipe addRecipe(Recipe recipe) {
         recipe.setId(null); // ensure new entity
-        return repo.save(recipe);
+        Recipe saved = repo.save(recipe);
+
+        // ✅ SAFE event publishing (Observer pattern)
+        if (saved.getAuthor() != null && saved.getAuthor().getId() != null) {
+            eventPublisher.publishEvent(
+                    new RecipeCreatedEvent(
+                            saved.getId(),
+                            saved.getAuthor().getId()
+                    )
+            );
+        }
+
+        return saved;
     }
 
     @Override
@@ -46,19 +63,16 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     public Optional<Recipe> updateRecipe(long id, Recipe updatedRecipe) {
         return repo.findById(id).map(existing -> {
-            // Preserve entity type (do not replace the DB row with a different subtype)
             existing.setTitle(updatedRecipe.getTitle());
             existing.setDescription(updatedRecipe.getDescription());
             existing.setIngredients(updatedRecipe.getIngredients());
             existing.setInstructions(updatedRecipe.getInstructions());
             existing.setServings(updatedRecipe.getServings());
 
-            // Update author if provided
             if (updatedRecipe.getAuthor() != null) {
                 existing.setAuthor(updatedRecipe.getAuthor());
             }
 
-            // Update tags if provided (replace all tags)
             if (updatedRecipe.getTags() != null) {
                 existing.clearTags();
                 updatedRecipe.getTags().forEach(existing::addTag);
@@ -77,12 +91,10 @@ public class RecipeServiceImpl implements RecipeService {
             if (partialRecipe.getInstructions() != null) existing.setInstructions(partialRecipe.getInstructions());
             if (partialRecipe.getServings() != null) existing.setServings(partialRecipe.getServings());
 
-            // Patch author if provided
             if (partialRecipe.getAuthor() != null) {
                 existing.setAuthor(partialRecipe.getAuthor());
             }
 
-            // Patch tags if provided (replace all tags)
             if (partialRecipe.getTags() != null && !partialRecipe.getTags().isEmpty()) {
                 existing.clearTags();
                 partialRecipe.getTags().forEach(existing::addTag);
@@ -91,8 +103,6 @@ public class RecipeServiceImpl implements RecipeService {
             return repo.save(existing);
         });
     }
-
-    // Tag-related operations
 
     @Override
     public Optional<Recipe> addTagToRecipe(long recipeId, Tag tag) {
