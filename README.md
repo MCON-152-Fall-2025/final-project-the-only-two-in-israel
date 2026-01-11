@@ -136,3 +136,5 @@ For questions or feedback, please open an issue on GitHub.
 
 ## Rena's first edits
 I am now editing the README file inorder to practice adding and merging branches
+# Etty's first edits
+- This is Etty editing the README file so that i can practice using Git in a collaborative environment by using differing branches and demonstrating the ability to create PR, review PRs, merge changes into the develop branches and pulling the changes back in.
